@@ -23,12 +23,17 @@ public class CompetitorAI implements AI {
 	private final int R_GRIEF = 2;
 	private final int R_PATHS = 3;
 	boolean boughtBucket = false;
+	int quoteCount = 15;
+	int lastQuote = 1;
+	int haveSpoken;
+	int talkers = 0;
 
 	private HashMap<Integer, Integer> roles = new HashMap<Integer, Integer>();
 
 	@Override
 	public Collection<FarmhandAction> turn(GameState state) {
-		
+		quoteCount++;
+		haveSpoken = 0;
 		ArrayList<FarmhandAction> actions = new ArrayList<FarmhandAction>();
 
 		//Number of workers to assign to each role
@@ -87,11 +92,11 @@ public class CompetitorAI implements AI {
 	}
 
 	private FarmhandAction noJob(GameState state, Farmhand farmhand) {
-		return farmhand.shout("I'm lazy and have no job");
+		return farmhand.shout(quote());
 	}
 
 	private FarmhandAction buildPaths(GameState state, Farmhand farmhand) {
-		return farmhand.shout("I'm building paths");
+		return farmhand.shout(quote());
 	}
 
 	private FarmhandAction grief(GameState state, Farmhand farmhand) {
@@ -120,11 +125,11 @@ public class CompetitorAI implements AI {
 				}
 			} 
 		}
-		return farmhand.shout("I'm griefing");
+		return farmhand.shout(quote());
 	}
 
 	private FarmhandAction recon(GameState state, Farmhand farmhand) {
-		return farmhand.shout("I'm reconing");
+		return farmhand.shout(quote());
 	}
 
 	private FarmhandAction duckFetch(GameState state, Farmhand farmhand) {
@@ -133,14 +138,14 @@ public class CompetitorAI implements AI {
 		Position farmhandPosition = farmhand.getPosition();
 		Position homePosition = state.getMyBase().getPosition();
 		Duck closest = currentDucks.getNotHeld().getClosestTo(farmhand);
-		
+
 		//Find out if there is a duck in adjacent square
 		Duck adjacentDuck = null;
 		for (Position p : getAdjacent(state, farmhandPosition)) {
 			if (p.equals(closest.getPosition()))
 				adjacentDuck = closest;
 		}
-		
+
 		//if we are holding a duck, we want to make progress back to the base
 		//otherwise we want to go get a duck
 		if (item instanceof Duck) {
@@ -162,13 +167,13 @@ public class CompetitorAI implements AI {
 				return farmhand.shout("No ducks nearby!");
 		}
 	}
-	
+
 	private Position shortestPath(GameState state,
 			Position farmhandPosition, Position destination) {
-		
+
 		//Get all of the adjacents, to the current position, whichever one
 		//of them is closest to the destination return that one
-		
+
 		double distance = -1;
 		Position closest = null;
 		for (Position p : getAdjacent(state, farmhandPosition)) {
@@ -186,7 +191,7 @@ public class CompetitorAI implements AI {
 	private ArrayList<Position> getAdjacent(GameState state, Position toCheck) {
 		ArrayList<Position> adjacentPositions = new ArrayList<Position>();
 		ArrayList<Position> possible = new ArrayList<Position>();
-		
+
 		//Check all 8 corresponding squares
 		possible.add(new Position(toCheck.getX() - 1, toCheck.getY() + 1));
 		possible.add(new Position(toCheck.getX(), toCheck.getY() + 1));
@@ -196,7 +201,7 @@ public class CompetitorAI implements AI {
 		possible.add(new Position(toCheck.getX(), toCheck.getY() - 1));
 		possible.add(new Position(toCheck.getX()-1, toCheck.getY() - 1));
 		possible.add(new Position(toCheck.getX() - 1, toCheck.getY()));
-		
+
 		for (Position p : possible) {
 			if (state.getTile(p) != null && validTile(state.getTile(p))) {
 				adjacentPositions.add(p);
@@ -205,10 +210,10 @@ public class CompetitorAI implements AI {
 		/*
 		System.out.println(toCheck);
 		System.out.println(adjacentPositions);
-		*/
+		 */
 		return adjacentPositions;
 	}
-	
+
 	private boolean validTile(Tile t) {
 		return t.canFarmhandCross();
 	}
@@ -217,6 +222,76 @@ public class CompetitorAI implements AI {
 		return Math.sqrt(
 				Math.pow((p1.getX() - p2.getX()), 2) + 
 				Math.pow((p1.getY() - p2.getY()), 2)
-		);
+				);
+	}
+
+	private String quote(){
+		if(talkers < 0 && haveSpoken == 0){
+			talkers = talkers*-1;
+		}
+		
+		if(talkers < 1)
+			talkers--;
+		
+		
+		if(quoteCount >= 10){
+			quoteCount = 0;
+			int minimum = 1;
+			int maximum = 12;
+			lastQuote = minimum + (int)(Math.random()*maximum); 
+		}
+		System.out.println(quoteCount +"   "+ lastQuote);
+		
+		String quote;
+		switch(lastQuote){
+			case 1:
+				quote =  "There's a snake in my boot!";
+				break;
+			case 2:
+				quote =  "Your Mom goes to college";
+				break;
+			case 3:
+				quote =  "Loud Noises!";
+				break;
+			case 4:
+				quote =  "I love lamp";
+				break;
+			case 5:
+				quote =  "I'm going East";
+				break;
+			case 6:
+				quote =  "You're killin me smalls";
+				break;
+			case 7:
+				quote =  "Inconceivable!";
+				break;
+			case 8:
+				quote =  "I CAN HAZ DUCK";
+				break;
+			case 9:
+				quote =  "The duck that will pierce the heavens.";
+				break;
+			case 10:
+				quote =  "Tree fiddy";
+				break;
+			case 11:
+				quote =  "Nope!";
+				break;
+			case 12:
+				quote =  "I'm griefing";
+				break;
+			default:
+				quote =  "Sup, nigga";
+		}
+		
+		if(quote.length() > 20*haveSpoken){
+			haveSpoken++;
+			return quote.substring(20*haveSpoken);
+		}
+		else{
+			haveSpoken++;
+			return quote;
+		}
+
 	}
 }
