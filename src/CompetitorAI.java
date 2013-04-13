@@ -22,26 +22,35 @@ public class CompetitorAI implements AI {
 	private final int R_RECON = 1;
 	private final int R_GRIEF = 2;
 	private final int R_PATHS = 3;
-	boolean boughtBucket = false;
 	int quoteCount = 15;
 	int lastQuote = 1;
 	int haveSpoken;
 	int talkers = 0;
+	private boolean boughtBucket = false;
+	private ArrayList<Duck> enemyDucks =  new ArrayList<Duck>();
 
 	private HashMap<Integer, Integer> roles = new HashMap<Integer, Integer>();
-
+	private ArrayList<Duck> ourDucks = new ArrayList<Duck>();
+	
+	Position homePosition = new Position(-1,-1);
+	
 	@Override
 	public Collection<FarmhandAction> turn(GameState state) {
 		quoteCount++;
 		haveSpoken = 0;
+
+		enemyDucks.clear();
+		//Set the home base position
+		if (homePosition.equals(new Position(-1, -1)))
+			homePosition = state.getMyBase().getPosition();
+		
 		ArrayList<FarmhandAction> actions = new ArrayList<FarmhandAction>();
 
 		//Number of workers to assign to each role
 		int totalWorkers = state.getMyFarmhands().size();
-		int duckFetch = totalWorkers/2;
-		int recon = 1;
-		int grief = 1;
-		int pathbuilding = totalWorkers - duckFetch - recon - grief;
+		
+		int grief = totalWorkers/2;
+		int duckFetch = totalWorkers - grief;
 
 		//role assignment
 		for (int index = 0; index < totalWorkers; index++) {
@@ -50,20 +59,10 @@ public class CompetitorAI implements AI {
 				//System.out.println("Adding Fetcher " + duckFetch);
 				duckFetch--;
 			}
-			else if (recon > 0) {
-				//System.out.println("Adding Recon " + recon);
-				roles.put(index,  R_RECON);
-				recon--;
-			}
 			else if (grief > 0) {
 				//System.out.println("Adding grief " + grief);
 				roles.put(index, R_GRIEF);
 				grief--;
-			}
-			else if (pathbuilding > 0) {
-				//System.out.println("Adding Pathbuilder" + pathbuilding);
-				roles.put(index, R_PATHS);
-				pathbuilding--;
 			}
 		}
 
@@ -73,16 +72,15 @@ public class CompetitorAI implements AI {
 		}
 		 */
 
+		//Clear out the HashMap
+		ourDucks.clear();
+		
 		int index = 0;
 		for (Farmhand farmhand : state.getMyFarmhands()) {
 			if (roles.get(index) == R_DUCK_FETCH)
 				actions.add(duckFetch(state, farmhand));
-			else if (roles.get(index) == R_RECON)
-				actions.add(recon(state, farmhand));
 			else if (roles.get(index) == R_GRIEF && !farmhand.isStumbled())
 				actions.add(grief(state, farmhand));
-			else if (roles.get(index) == R_PATHS)
-				actions.add(buildPaths(state, farmhand));
 			else
 				actions.add(noJob(state, farmhand));
 			index++;
@@ -99,13 +97,20 @@ public class CompetitorAI implements AI {
 		return farmhand.shout(quote());
 	}
 
+
 	private FarmhandAction grief(GameState state, Farmhand farmhand) {
 		// Get the closest visible duck owned by other team
 		DuckList ducks = state.getDucks().getNotHeld();
 		ducks.removeAll(state.getMyDucks());
+		ducks.removeAll(enemyDucks);
 		Duck closestDuck = ducks.getClosestTo(farmhand);
-		if (closestDuck != null) {
-
+		if (closestDuck != null || !enemyDucks.isEmpty()) {
+			if(closestDuck == null){
+				closestDuck = enemyDucks.get(0);
+			}
+			else{
+				enemyDucks.add(closestDuck);
+			}
 			int dx = farmhand.getX() - closestDuck.getX();
 			int dy = farmhand.getY() - closestDuck.getY();
 
@@ -132,13 +137,16 @@ public class CompetitorAI implements AI {
 		return farmhand.shout(quote());
 	}
 
+
 	private FarmhandAction duckFetch(GameState state, Farmhand farmhand) {
 		Entity item = farmhand.getHeldObject();
 		DuckList currentDucks = state.getMyDucks().getNotHeld();
 		Position farmhandPosition = farmhand.getPosition();
-		Position homePosition = state.getMyBase().getPosition();
-		Duck closest = currentDucks.getNotHeld().getClosestTo(farmhand);
-
+		DuckList possibleDucks = state.getMyDucks().getNotHeld();
+		possibleDucks.removeAll(ourDucks);
+		Duck closest = possibleDucks.getClosestTo(farmhandPosition);
+		ourDucks.add(closest);
+		
 		//Find out if there is a duck in adjacent square
 		Duck adjacentDuck = null;
 		for (Position p : getAdjacent(state, farmhandPosition)) {
@@ -149,18 +157,18 @@ public class CompetitorAI implements AI {
 		//if we are holding a duck, we want to make progress back to the base
 		//otherwise we want to go get a duck
 		if (item instanceof Duck) {
-			System.out.println("Holding duck");
+			//System.out.println("Holding duck");
 			if (farmhandPosition.equals(homePosition))
 				farmhand.dropItem(homePosition);
 			return farmhand.move(shortestPath(state, farmhandPosition, homePosition));
 		}
 		else if (adjacentDuck != null) {
-			System.out.println("Picking up duck");
+			//System.out.println("Picking up duck");
 			return farmhand.pickUp(adjacentDuck);
 		}
 		else {
 			//need to find the closest duck and go towards it
-			System.out.println("Going twoards duck: " + closest.getPosition());
+			//System.out.println("Going twoards duck: " + closest.getPosition());
 			if (closest != null)
 				return farmhand.move(shortestPath(state, farmhandPosition, closest.getPosition()));
 			else
@@ -183,7 +191,7 @@ public class CompetitorAI implements AI {
 				closest = p;
 			}
 		}
-		System.out.println(closest);
+		//System.out.println(closest);
 		return closest;
 	}
 
