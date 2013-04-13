@@ -22,7 +22,8 @@ public class CompetitorAI implements AI {
 	private final int R_RECON = 1;
 	private final int R_GRIEF = 2;
 	private final int R_PATHS = 3;
-	boolean boughtBucket = false;
+	private boolean boughtBucket = false;
+	private ArrayList<Duck> enemyDucks =  new ArrayList<Duck>();
 
 	private HashMap<Integer, Integer> roles = new HashMap<Integer, Integer>();
 	private HashMap<Position, Boolean> duckSpokenFor = new HashMap<Position, Boolean>();
@@ -31,7 +32,7 @@ public class CompetitorAI implements AI {
 	
 	@Override
 	public Collection<FarmhandAction> turn(GameState state) {
-		
+		enemyDucks.clear();
 		//Set the home base position
 		if (homePosition.equals(new Position(-1, -1)))
 			homePosition = state.getMyBase().getPosition();
@@ -66,12 +67,12 @@ public class CompetitorAI implements AI {
 
 		int index = 0;
 		for (Farmhand farmhand : state.getMyFarmhands()) {
-			if (roles.get(index) == R_DUCK_FETCH)
-				actions.add(duckFetch(state, farmhand));
-			else if (roles.get(index) == R_GRIEF && !farmhand.isStumbled())
+			//if (roles.get(index) == R_DUCK_FETCH)
+				//actions.add(duckFetch(state, farmhand));
+			//else if (roles.get(index) == R_GRIEF && !farmhand.isStumbled())
 				actions.add(grief(state, farmhand));
-			else
-				actions.add(noJob(state, farmhand));
+			//else
+				//actions.add(noJob(state, farmhand));
 			index++;
 		}
 
@@ -86,9 +87,15 @@ public class CompetitorAI implements AI {
 		// Get the closest visible duck owned by other team
 		DuckList ducks = state.getDucks().getNotHeld();
 		ducks.removeAll(state.getMyDucks());
+		ducks.removeAll(enemyDucks);
 		Duck closestDuck = ducks.getClosestTo(farmhand);
-		if (closestDuck != null) {
-
+		if (closestDuck != null || !enemyDucks.isEmpty()) {
+			if(closestDuck == null){
+				closestDuck = enemyDucks.get(0);
+			}
+			else{
+				enemyDucks.add(closestDuck);
+			}
 			int dx = farmhand.getX() - closestDuck.getX();
 			int dy = farmhand.getY() - closestDuck.getY();
 
