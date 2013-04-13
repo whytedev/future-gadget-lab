@@ -241,7 +241,6 @@ public class CompetitorAI implements AI {
 			int maximum = 12;
 			lastQuote = minimum + (int)(Math.random()*maximum); 
 		}
-		System.out.println(quoteCount +"   "+ lastQuote);
 		
 		String quote;
 		switch(lastQuote){
