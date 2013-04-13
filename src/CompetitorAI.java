@@ -34,7 +34,7 @@ public class CompetitorAI implements AI {
 
 	Position homePosition = new Position(-1,-1);
 
-	@Override
+
 	public Collection<FarmhandAction> turn(GameState state) {
 		quoteCount++;
 		haveSpoken = 0;
@@ -111,24 +111,10 @@ public class CompetitorAI implements AI {
 			else{
 				enemyDucks.add(closestDuck);
 			}
-			int dx = farmhand.getX() - closestDuck.getX();
-			int dy = farmhand.getY() - closestDuck.getY();
-
-			// If not adjacent to the duck
-			if (Math.abs(dx) > 1 || Math.abs(dy) > 1) {
-
-				int newX = farmhand.getX()
-						+ (int) Math.signum(closestDuck.getX()
-								- farmhand.getX());
-				int newY = farmhand.getY()
-						+ (int) Math.signum(closestDuck.getY()
-								- farmhand.getY());
-				// Move closer to the duck, if the tile is crossable
-				if (state.isTileEmpty(newX, newY)
-						&& state.getTile(newX, newY).canFarmhandCross()) {
-					return farmhand.move(newX, newY);
-				}
-			} 
+			Position pos = shortestPath(state, farmhand.getPosition(), closestDuck.getPosition());
+			if (Math.abs(closestDuck.getX() - farmhand.getX()) > 1 || Math.abs(closestDuck.getY() - farmhand.getY()) > 1){
+				return farmhand.move(pos);
+			}
 		}
 		return farmhand.shout(quote());
 	}
@@ -141,6 +127,7 @@ public class CompetitorAI implements AI {
 	private FarmhandAction duckFetch(GameState state, Farmhand farmhand) {
 		Entity item = farmhand.getHeldObject();
 		Position farmhandPosition = farmhand.getPosition();
+
 
 		if (item instanceof Duck) {
 			//System.out.println("Holding duck");
