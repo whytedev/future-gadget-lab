@@ -22,6 +22,10 @@ public class CompetitorAI implements AI {
 	private final int R_RECON = 1;
 	private final int R_GRIEF = 2;
 	private final int R_PATHS = 3;
+	int quoteCount = 15;
+	int lastQuote = 1;
+	int haveSpoken;
+	int talkers = 0;
 	private boolean boughtBucket = false;
 	private ArrayList<Duck> enemyDucks =  new ArrayList<Duck>();
 
@@ -30,7 +34,11 @@ public class CompetitorAI implements AI {
 
 	Position homePosition = new Position(-1,-1);
 
+
 	public Collection<FarmhandAction> turn(GameState state) {
+		quoteCount++;
+		haveSpoken = 0;
+
 		enemyDucks.clear();
 		//Set the home base position
 		if (homePosition.equals(new Position(-1, -1)))
@@ -82,8 +90,13 @@ public class CompetitorAI implements AI {
 	}
 
 	private FarmhandAction noJob(GameState state, Farmhand farmhand) {
-		return farmhand.shout("I'm lazy and have no job");
+		return farmhand.shout(quote());
 	}
+
+	private FarmhandAction buildPaths(GameState state, Farmhand farmhand) {
+		return farmhand.shout(quote());
+	}
+
 
 	private FarmhandAction grief(GameState state, Farmhand farmhand) {
 		// Get the closest visible duck owned by other team
@@ -103,47 +116,44 @@ public class CompetitorAI implements AI {
 				return farmhand.move(pos);
 			}
 		}
-		return farmhand.shout("I'm griefing");
+		return farmhand.shout(quote());
 	}
+
+	private FarmhandAction recon(GameState state, Farmhand farmhand) {
+		return farmhand.shout(quote());
+	}
+
 
 	private FarmhandAction duckFetch(GameState state, Farmhand farmhand) {
 		Entity item = farmhand.getHeldObject();
-		DuckList currentDucks = state.getMyDucks().getNotHeld();
 		Position farmhandPosition = farmhand.getPosition();
 
-		DuckList possibleDucks = state.getMyDucks().getNotHeld();
-		possibleDucks.removeAll(ourDucks);
-		Duck closest = possibleDucks.getClosestTo(farmhandPosition);
 
-		ourDucks.add(closest);
-
-		//Find out if there is a duck in adjacent square
-		Duck adjacentDuck = null;
-		for (Position p : getAdjacent(state, farmhandPosition)) {
-			if (p.equals(closest.getPosition()))
-				adjacentDuck = closest;
-		}
-
-		//if we are holding a duck, we want to make progress back to the base
-		//otherwise we want to go get a duck
 		if (item instanceof Duck) {
 			//System.out.println("Holding duck");
 			if (farmhandPosition.equals(homePosition))
 				farmhand.dropItem(homePosition);
 			return farmhand.move(shortestPath(state, farmhandPosition, homePosition));
 		}
-		else if (adjacentDuck != null) {
-			//System.out.println("Picking up duck");
-			return farmhand.pickUp(adjacentDuck);
+
+		DuckList possibleDucks = state.getMyDucks().getNotHeld();
+		possibleDucks.removeAll(ourDucks);
+
+		Duck closest = possibleDucks.getClosestTo(farmhandPosition);
+
+		ourDucks.add(closest);
+
+		//need to find the closest duck and go towards it
+		//System.out.println("Going twoards duck: " + closest.getPosition());
+		if (closest == null)
+			return farmhand.shout("I'm waiting for chickens");
+
+		if (distance(farmhandPosition, closest.getPosition()) < 1.5) {
+			//System.out.println("Returning duck to base");
+			return farmhand.pickUp(closest);
 		}
-		else {
-			//need to find the closest duck and go towards it
-			//System.out.println("Going twoards duck: " + closest.getPosition());
-			if (closest != null)
-				return farmhand.move(shortestPath(state, farmhandPosition, closest.getPosition()));
-			else
-				return farmhand.shout("No ducks nearby!");
-		}
+
+		return farmhand.move(shortestPath(state, farmhandPosition, closest.getPosition()));
 	}
 
 	private Position shortestPath(GameState state,
@@ -201,5 +211,76 @@ public class CompetitorAI implements AI {
 				Math.pow((p1.getX() - p2.getX()), 2) + 
 				Math.pow((p1.getY() - p2.getY()), 2)
 				);
+	}
+
+	private String quote(){
+		if(talkers < 0 && haveSpoken == 0){
+			talkers = talkers*-1;
+		}
+		
+		if(talkers < 1)
+			talkers--;
+		
+		
+		if(quoteCount >= 10){
+			quoteCount = 0;
+			int minimum = 1;
+			int maximum = 12;
+			lastQuote = minimum + (int)(Math.random()*maximum); 
+		}
+		System.out.println(quoteCount +"   "+ lastQuote);
+		
+		String quote;
+		switch(lastQuote){
+			case 1:
+				quote =  "There's a snake in my boot!";
+				break;
+			case 2:
+				quote =  "Your Mom goes to college";
+				break;
+			case 3:
+				quote =  "Loud Noises!";
+				break;
+			case 4:
+				quote =  "I love lamp";
+				break;
+			case 5:
+				quote =  "I'm going East";
+				break;
+			case 6:
+				quote =  "You're killin me smalls";
+				break;
+			case 7:
+				quote =  "Inconceivable!";
+				break;
+			case 8:
+				quote =  "I CAN HAZ DUCK";
+				break;
+			case 9:
+				quote =  "The duck that will pierce the heavens.";
+				break;
+			case 10:
+				quote =  "Tree fiddy";
+				break;
+			case 11:
+				quote =  "Nope!";
+				break;
+			case 12:
+				quote =  "I'm griefing";
+				break;
+			default:
+				quote =  "Sup";
+		}
+		
+		if(quote.length() > 20*haveSpoken){
+			quote = quote.substring(20*haveSpoken);
+			haveSpoken++;
+			return quote;
+		}
+		else{
+			haveSpoken++;
+			return quote;
+		}
+
 	}
 }
