@@ -70,12 +70,12 @@ public class CompetitorAI implements AI {
 		
 		int index = 0;
 		for (Farmhand farmhand : state.getMyFarmhands()) {
-			//if (roles.get(index) == R_DUCK_FETCH)
-				//actions.add(duckFetch(state, farmhand));
-			//else if (roles.get(index) == R_GRIEF && !farmhand.isStumbled())
+			if (roles.get(index) == R_DUCK_FETCH)
+				actions.add(duckFetch(state, farmhand));
+			else if (roles.get(index) == R_GRIEF && !farmhand.isStumbled())
 				actions.add(grief(state, farmhand));
-			//else
-				//actions.add(noJob(state, farmhand));
+			else
+				actions.add(noJob(state, farmhand));
 			index++;
 		}
 
