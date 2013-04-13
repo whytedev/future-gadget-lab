@@ -293,8 +293,9 @@ public class CompetitorAI implements AI {
 		}
 		
 		if(quote.length() > 20*haveSpoken){
+			quote = quote.substring(20*haveSpoken);
 			haveSpoken++;
-			return quote.substring(20*haveSpoken);
+			return quote;
 		}
 		else{
 			haveSpoken++;
