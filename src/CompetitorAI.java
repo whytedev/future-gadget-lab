@@ -25,7 +25,7 @@ public class CompetitorAI implements AI {
 	boolean boughtBucket = false;
 
 	private HashMap<Integer, Integer> roles = new HashMap<Integer, Integer>();
-	private HashMap<Position, Boolean> duckSpokenFor = new HashMap<Position, Boolean>();
+	private ArrayList<Duck> ourDucks = new ArrayList<Duck>();
 	
 	Position homePosition = new Position(-1,-1);
 	
@@ -64,6 +64,9 @@ public class CompetitorAI implements AI {
 		}
 		 */
 
+		//Clear out the HashMap
+		ourDucks.clear();
+		
 		int index = 0;
 		for (Farmhand farmhand : state.getMyFarmhands()) {
 			if (roles.get(index) == R_DUCK_FETCH)
@@ -116,16 +119,11 @@ public class CompetitorAI implements AI {
 		DuckList currentDucks = state.getMyDucks().getNotHeld();
 		Position farmhandPosition = farmhand.getPosition();
 		
-		ArrayList<Duck> possibleDucks = getCurrentDucksByDistance(state, farmhandPosition);
-		Duck closest = null;
+		DuckList possibleDucks = state.getMyDucks().getNotHeld();
+		possibleDucks.removeAll(ourDucks);
+		Duck closest = possibleDucks.getClosestTo(farmhandPosition);
 		
-		for (Duck d : possibleDucks) {
-			//Check the hashmap to see if this duck is spoken for
-			if (!duckSpokenFor.get(d.getPosition())) {
-				closest = d;
-				break;
-			}
-		}
+		ourDucks.add(closest);
 		
 		//Find out if there is a duck in adjacent square
 		Duck adjacentDuck = null;
@@ -137,38 +135,23 @@ public class CompetitorAI implements AI {
 		//if we are holding a duck, we want to make progress back to the base
 		//otherwise we want to go get a duck
 		if (item instanceof Duck) {
-			System.out.println("Holding duck");
+			//System.out.println("Holding duck");
 			if (farmhandPosition.equals(homePosition))
 				farmhand.dropItem(homePosition);
 			return farmhand.move(shortestPath(state, farmhandPosition, homePosition));
 		}
 		else if (adjacentDuck != null) {
-			System.out.println("Picking up duck");
+			//System.out.println("Picking up duck");
 			return farmhand.pickUp(adjacentDuck);
 		}
 		else {
 			//need to find the closest duck and go towards it
-			System.out.println("Going twoards duck: " + closest.getPosition());
+			//System.out.println("Going twoards duck: " + closest.getPosition());
 			if (closest != null)
 				return farmhand.move(shortestPath(state, farmhandPosition, closest.getPosition()));
 			else
 				return farmhand.shout("No ducks nearby!");
 		}
-	}
-	
-	private ArrayList<Duck> getCurrentDucksByDistance(GameState state, Position farmhandPosition) {
-		ArrayList<Duck> ducks = new ArrayList<Duck>();
-		
-		for (Duck d : state.getMyDucks().getNotHeld()) {
-			for (int i = 0; i < ducks.size(); i++) {
-				if (distance(d.getPosition(), farmhandPosition) < 
-					distance(ducks.get(i).getPosition(), farmhandPosition)) {
-					ducks.add(i, d);
-				}
-			}
-		}
-		System.out.println(ducks);
-		return ducks;
 	}
 
 	private Position shortestPath(GameState state,
@@ -186,7 +169,7 @@ public class CompetitorAI implements AI {
 				closest = p;
 			}
 		}
-		System.out.println(closest);
+		//System.out.println(closest);
 		return closest;
 	}
 
