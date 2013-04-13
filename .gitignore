@@ -1,0 +1,12 @@
+# Ignore everything
+*
+
+# Don't ignore directories
+!*/
+
+# Don't ignore the gitignore
+!.gitignore
+
+# Include src
+!*.java
+!*.xml

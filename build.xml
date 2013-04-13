@@ -1,0 +1,28 @@
+<project name="BonzAI2013DevPackage" basedir="." default="runGUI">
+    <property name="AIClass" value="CompetitorAI" />
+    <property name="Team" value="Future Gadget Lab" />
+    
+    <target name="buildAI">
+        <mkdir dir="bin" />
+        <javac debug="on" includeantruntime="false" srcdir="src" destdir="bin" compiler="javac1.6" classpath="BonzAI2013API.jar" />
+    </target>
+    
+   	<target name="jarAI" depends="cleanAI,buildAI">
+   	    <jar jarfile="${Team}.jar">
+   	        <fileset dir="src" includes="**/*.*" />
+   	        <fileset dir="bin" includes="**/*.*" />
+   	        <manifest>
+   	            <attribute name="AIClass" value="${AIClass}" />
+   	            <attribute name="Team" value="${Team}" />
+   	        </manifest>
+   	    </jar>
+   	</target>
+   	
+   	<target name="cleanAI">
+   	    <delete dir="bin" />
+   	</target>
+   	
+   	<target name="runGUI" depends="jarAI">
+   	    <java jar="BonzAI2013CompetitorGUI.jar" fork="true" />
+   	</target>
+</project>
