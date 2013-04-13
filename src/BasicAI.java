@@ -10,7 +10,6 @@ import bonzai.api.GameState;
 
 public class BasicAI implements AI {
 
-	@Override
 	public Collection<FarmhandAction> turn(GameState state) {
 		// The set of actions to perform
 		LinkedList<FarmhandAction> actions = new LinkedList<FarmhandAction>();

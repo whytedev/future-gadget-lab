@@ -27,21 +27,20 @@ public class CompetitorAI implements AI {
 
 	private HashMap<Integer, Integer> roles = new HashMap<Integer, Integer>();
 	private ArrayList<Duck> ourDucks = new ArrayList<Duck>();
-	
+
 	Position homePosition = new Position(-1,-1);
-	
-	@Override
+
 	public Collection<FarmhandAction> turn(GameState state) {
 		enemyDucks.clear();
 		//Set the home base position
 		if (homePosition.equals(new Position(-1, -1)))
 			homePosition = state.getMyBase().getPosition();
-		
+
 		ArrayList<FarmhandAction> actions = new ArrayList<FarmhandAction>();
 
 		//Number of workers to assign to each role
 		int totalWorkers = state.getMyFarmhands().size();
-		
+
 		int grief = totalWorkers/2;
 		int duckFetch = totalWorkers - grief;
 
@@ -67,7 +66,7 @@ public class CompetitorAI implements AI {
 
 		//Clear out the HashMap
 		ourDucks.clear();
-		
+
 		int index = 0;
 		for (Farmhand farmhand : state.getMyFarmhands()) {
 			if (roles.get(index) == R_DUCK_FETCH)
@@ -99,24 +98,10 @@ public class CompetitorAI implements AI {
 			else{
 				enemyDucks.add(closestDuck);
 			}
-			int dx = farmhand.getX() - closestDuck.getX();
-			int dy = farmhand.getY() - closestDuck.getY();
-
-			// If not adjacent to the duck
-			if (Math.abs(dx) > 1 || Math.abs(dy) > 1) {
-
-				int newX = farmhand.getX()
-						+ (int) Math.signum(closestDuck.getX()
-								- farmhand.getX());
-				int newY = farmhand.getY()
-						+ (int) Math.signum(closestDuck.getY()
-								- farmhand.getY());
-				// Move closer to the duck, if the tile is crossable
-				if (state.isTileEmpty(newX, newY)
-						&& state.getTile(newX, newY).canFarmhandCross()) {
-					return farmhand.move(newX, newY);
-				}
-			} 
+			Position pos = shortestPath(state, farmhand.getPosition(), closestDuck.getPosition());
+			if (Math.abs(closestDuck.getX() - farmhand.getX()) > 1 || Math.abs(closestDuck.getY() - farmhand.getY()) > 1){
+				return farmhand.move(pos);
+			}
 		}
 		return farmhand.shout("I'm griefing");
 	}
@@ -125,20 +110,20 @@ public class CompetitorAI implements AI {
 		Entity item = farmhand.getHeldObject();
 		DuckList currentDucks = state.getMyDucks().getNotHeld();
 		Position farmhandPosition = farmhand.getPosition();
-		
+
 		DuckList possibleDucks = state.getMyDucks().getNotHeld();
 		possibleDucks.removeAll(ourDucks);
 		Duck closest = possibleDucks.getClosestTo(farmhandPosition);
-		
+
 		ourDucks.add(closest);
-		
+
 		//Find out if there is a duck in adjacent square
 		Duck adjacentDuck = null;
 		for (Position p : getAdjacent(state, farmhandPosition)) {
 			if (p.equals(closest.getPosition()))
 				adjacentDuck = closest;
 		}
-		
+
 		//if we are holding a duck, we want to make progress back to the base
 		//otherwise we want to go get a duck
 		if (item instanceof Duck) {
@@ -163,10 +148,10 @@ public class CompetitorAI implements AI {
 
 	private Position shortestPath(GameState state,
 			Position farmhandPosition, Position destination) {
-		
+
 		//Get all of the adjacents, to the current position, whichever one
 		//of them is closest to the destination return that one
-		
+
 		double distance = -1;
 		Position closest = null;
 		for (Position p : getAdjacent(state, farmhandPosition)) {
@@ -184,7 +169,7 @@ public class CompetitorAI implements AI {
 	private ArrayList<Position> getAdjacent(GameState state, Position toCheck) {
 		ArrayList<Position> adjacentPositions = new ArrayList<Position>();
 		ArrayList<Position> possible = new ArrayList<Position>();
-		
+
 		//Check all 8 corresponding squares
 		possible.add(new Position(toCheck.getX() - 1, toCheck.getY() + 1));
 		possible.add(new Position(toCheck.getX(), toCheck.getY() + 1));
@@ -194,7 +179,7 @@ public class CompetitorAI implements AI {
 		possible.add(new Position(toCheck.getX(), toCheck.getY() - 1));
 		possible.add(new Position(toCheck.getX()-1, toCheck.getY() - 1));
 		possible.add(new Position(toCheck.getX() - 1, toCheck.getY()));
-		
+
 		for (Position p : possible) {
 			if (state.getTile(p) != null && validTile(state.getTile(p))) {
 				adjacentPositions.add(p);
@@ -203,10 +188,10 @@ public class CompetitorAI implements AI {
 		/*
 		System.out.println(toCheck);
 		System.out.println(adjacentPositions);
-		*/
+		 */
 		return adjacentPositions;
 	}
-	
+
 	private boolean validTile(Tile t) {
 		return t.canFarmhandCross();
 	}
@@ -215,6 +200,6 @@ public class CompetitorAI implements AI {
 		return Math.sqrt(
 				Math.pow((p1.getX() - p2.getX()), 2) + 
 				Math.pow((p1.getY() - p2.getY()), 2)
-		);
+				);
 	}
 }
