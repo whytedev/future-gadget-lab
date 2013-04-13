@@ -146,7 +146,7 @@ public class CompetitorAI implements AI {
 		//need to find the closest duck and go towards it
 		//System.out.println("Going twoards duck: " + closest.getPosition());
 		if (closest == null)
-			return farmhand.shout("I'm waiting for chickens");
+			return grief(state, farmhand);
 
 		if (distance(farmhandPosition, closest.getPosition()) < 1.5) {
 			//System.out.println("Returning duck to base");
