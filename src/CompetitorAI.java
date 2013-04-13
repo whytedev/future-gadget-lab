@@ -25,18 +25,24 @@ public class CompetitorAI implements AI {
 	boolean boughtBucket = false;
 
 	private HashMap<Integer, Integer> roles = new HashMap<Integer, Integer>();
-
+	private HashMap<Position, Boolean> duckSpokenFor = new HashMap<Position, Boolean>();
+	
+	Position homePosition = new Position(-1,-1);
+	
 	@Override
 	public Collection<FarmhandAction> turn(GameState state) {
+		
+		//Set the home base position
+		if (homePosition.equals(new Position(-1, -1)))
+			homePosition = state.getMyBase().getPosition();
 		
 		ArrayList<FarmhandAction> actions = new ArrayList<FarmhandAction>();
 
 		//Number of workers to assign to each role
 		int totalWorkers = state.getMyFarmhands().size();
-		int duckFetch = totalWorkers/2;
-		int recon = 1;
-		int grief = 1;
-		int pathbuilding = totalWorkers - duckFetch - recon - grief;
+		
+		int grief = totalWorkers/2;
+		int duckFetch = totalWorkers - grief;
 
 		//role assignment
 		for (int index = 0; index < totalWorkers; index++) {
@@ -45,20 +51,10 @@ public class CompetitorAI implements AI {
 				//System.out.println("Adding Fetcher " + duckFetch);
 				duckFetch--;
 			}
-			else if (recon > 0) {
-				//System.out.println("Adding Recon " + recon);
-				roles.put(index,  R_RECON);
-				recon--;
-			}
 			else if (grief > 0) {
 				//System.out.println("Adding grief " + grief);
 				roles.put(index, R_GRIEF);
 				grief--;
-			}
-			else if (pathbuilding > 0) {
-				//System.out.println("Adding Pathbuilder" + pathbuilding);
-				roles.put(index, R_PATHS);
-				pathbuilding--;
 			}
 		}
 
@@ -72,12 +68,8 @@ public class CompetitorAI implements AI {
 		for (Farmhand farmhand : state.getMyFarmhands()) {
 			if (roles.get(index) == R_DUCK_FETCH)
 				actions.add(duckFetch(state, farmhand));
-			else if (roles.get(index) == R_RECON)
-				actions.add(recon(state, farmhand));
 			else if (roles.get(index) == R_GRIEF && !farmhand.isStumbled())
 				actions.add(grief(state, farmhand));
-			else if (roles.get(index) == R_PATHS)
-				actions.add(buildPaths(state, farmhand));
 			else
 				actions.add(noJob(state, farmhand));
 			index++;
@@ -88,10 +80,6 @@ public class CompetitorAI implements AI {
 
 	private FarmhandAction noJob(GameState state, Farmhand farmhand) {
 		return farmhand.shout("I'm lazy and have no job");
-	}
-
-	private FarmhandAction buildPaths(GameState state, Farmhand farmhand) {
-		return farmhand.shout("I'm building paths");
 	}
 
 	private FarmhandAction grief(GameState state, Farmhand farmhand) {
@@ -123,16 +111,21 @@ public class CompetitorAI implements AI {
 		return farmhand.shout("I'm griefing");
 	}
 
-	private FarmhandAction recon(GameState state, Farmhand farmhand) {
-		return farmhand.shout("I'm reconing");
-	}
-
 	private FarmhandAction duckFetch(GameState state, Farmhand farmhand) {
 		Entity item = farmhand.getHeldObject();
 		DuckList currentDucks = state.getMyDucks().getNotHeld();
 		Position farmhandPosition = farmhand.getPosition();
-		Position homePosition = state.getMyBase().getPosition();
-		Duck closest = currentDucks.getNotHeld().getClosestTo(farmhand);
+		
+		ArrayList<Duck> possibleDucks = getCurrentDucksByDistance(state, farmhandPosition);
+		Duck closest = null;
+		
+		for (Duck d : possibleDucks) {
+			//Check the hashmap to see if this duck is spoken for
+			if (!duckSpokenFor.get(d.getPosition())) {
+				closest = d;
+				break;
+			}
+		}
 		
 		//Find out if there is a duck in adjacent square
 		Duck adjacentDuck = null;
@@ -163,6 +156,21 @@ public class CompetitorAI implements AI {
 		}
 	}
 	
+	private ArrayList<Duck> getCurrentDucksByDistance(GameState state, Position farmhandPosition) {
+		ArrayList<Duck> ducks = new ArrayList<Duck>();
+		
+		for (Duck d : state.getMyDucks().getNotHeld()) {
+			for (int i = 0; i < ducks.size(); i++) {
+				if (distance(d.getPosition(), farmhandPosition) < 
+					distance(ducks.get(i).getPosition(), farmhandPosition)) {
+					ducks.add(i, d);
+				}
+			}
+		}
+		System.out.println(ducks);
+		return ducks;
+	}
+
 	private Position shortestPath(GameState state,
 			Position farmhandPosition, Position destination) {
 		
