@@ -31,9 +31,9 @@ public class CompetitorAI implements AI {
 
 	private HashMap<Integer, Integer> roles = new HashMap<Integer, Integer>();
 	private ArrayList<Duck> ourDucks = new ArrayList<Duck>();
-	
+
 	Position homePosition = new Position(-1,-1);
-	
+
 	@Override
 	public Collection<FarmhandAction> turn(GameState state) {
 		quoteCount++;
@@ -43,12 +43,12 @@ public class CompetitorAI implements AI {
 		//Set the home base position
 		if (homePosition.equals(new Position(-1, -1)))
 			homePosition = state.getMyBase().getPosition();
-		
+
 		ArrayList<FarmhandAction> actions = new ArrayList<FarmhandAction>();
 
 		//Number of workers to assign to each role
 		int totalWorkers = state.getMyFarmhands().size();
-		
+
 		int grief = totalWorkers/2;
 		int duckFetch = totalWorkers - grief;
 
@@ -74,7 +74,7 @@ public class CompetitorAI implements AI {
 
 		//Clear out the HashMap
 		ourDucks.clear();
-		
+
 		int index = 0;
 		for (Farmhand farmhand : state.getMyFarmhands()) {
 			if (roles.get(index) == R_DUCK_FETCH)
@@ -140,40 +140,33 @@ public class CompetitorAI implements AI {
 
 	private FarmhandAction duckFetch(GameState state, Farmhand farmhand) {
 		Entity item = farmhand.getHeldObject();
-		DuckList currentDucks = state.getMyDucks().getNotHeld();
 		Position farmhandPosition = farmhand.getPosition();
-		DuckList possibleDucks = state.getMyDucks().getNotHeld();
-		possibleDucks.removeAll(ourDucks);
-		Duck closest = possibleDucks.getClosestTo(farmhandPosition);
-		ourDucks.add(closest);
-		
-		//Find out if there is a duck in adjacent square
-		Duck adjacentDuck = null;
-		for (Position p : getAdjacent(state, farmhandPosition)) {
-			if (p.equals(closest.getPosition()))
-				adjacentDuck = closest;
-		}
 
-		//if we are holding a duck, we want to make progress back to the base
-		//otherwise we want to go get a duck
 		if (item instanceof Duck) {
 			//System.out.println("Holding duck");
 			if (farmhandPosition.equals(homePosition))
 				farmhand.dropItem(homePosition);
 			return farmhand.move(shortestPath(state, farmhandPosition, homePosition));
 		}
-		else if (adjacentDuck != null) {
-			//System.out.println("Picking up duck");
-			return farmhand.pickUp(adjacentDuck);
+
+		DuckList possibleDucks = state.getMyDucks().getNotHeld();
+		possibleDucks.removeAll(ourDucks);
+
+		Duck closest = possibleDucks.getClosestTo(farmhandPosition);
+
+		ourDucks.add(closest);
+
+		//need to find the closest duck and go towards it
+		//System.out.println("Going twoards duck: " + closest.getPosition());
+		if (closest == null)
+			return farmhand.shout("I'm waiting for chickens");
+
+		if (distance(farmhandPosition, closest.getPosition()) < 1.5) {
+			//System.out.println("Returning duck to base");
+			return farmhand.pickUp(closest);
 		}
-		else {
-			//need to find the closest duck and go towards it
-			//System.out.println("Going twoards duck: " + closest.getPosition());
-			if (closest != null)
-				return farmhand.move(shortestPath(state, farmhandPosition, closest.getPosition()));
-			else
-				return farmhand.shout("No ducks nearby!");
-		}
+
+		return farmhand.move(shortestPath(state, farmhandPosition, closest.getPosition()));
 	}
 
 	private Position shortestPath(GameState state,
