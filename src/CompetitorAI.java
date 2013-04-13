@@ -289,7 +289,7 @@ public class CompetitorAI implements AI {
 				quote =  "I'm griefing";
 				break;
 			default:
-				quote =  "Sup, nigga";
+				quote =  "Sup";
 		}
 		
 		if(quote.length() > 20*haveSpoken){
